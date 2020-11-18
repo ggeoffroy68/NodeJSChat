@@ -1,36 +1,34 @@
-let express = require('express');
-let http = require('http');
-let app = express();
-let server = http.createServer(app);
+var http = require('http');
+var express = require('express');
+var socket = require('socket.io');
 
-//STEP 3
-let io = require('socket.io')(server);
+var app = express();
+var server = http.createServer(app);
+var io = socket(server);
+
+function get(req, result) {
+    result.sendFile(__dirname + "/index.html");
+}
 
 
-app.get('/', (req, res) => {
-    //STEP 1
-    //res.send('<h1>Hello world</h1>');
+app.get('/', get);
+app.get('/hello', get);
 
-    //STEP 2
-    res.sendFile(__dirname + '/index.html')
+server.listen('3000', function() {
+    console.log("Le serveur est lancé");
 });
 
-//STEP 3
-io.on('connection', (socket) => {
-    console.log('Un nouveau Tek0 !');
-    //STEP 4
-    socket.on('disconnect', () => {
-        console.log("Un Tek5 s'en va !");
+io.on('connection', function(socket) {
+    console.log('Quelqu\'un s\'est connecté');
+
+    socket.on('chat-sended', function(name, text) {
+        io.emit('chat-received', name, text);
     });
-    //STEP 5
-    socket.on('chat message', (msg) => {
-        console.log('Message: ' + msg);
-        //STEP 6
-        //socket.broadcast.emit('chat message', msg);
-        io.emit('chat message', msg);
-      });
-});
+    socket.on('disconnect', function() {
+        console.log('Deconnexion...')
+    });
 
-server.listen(3000, () => {
-    console.log('Server listen on: 3000');
-});
+    socket.on('img', function(name, image) {
+        io.emit('img', name, image);
+    })
+})
